@@ -1,0 +1,6 @@
+interface:
+  display_name: "LLM Wiki · GraphRAG"
+  short_description: "Ведение LLM-вики, граф связей и локальный поиск"
+  default_prompt: "Используй $llm-wiki для создания или актуализации базы знаний проекта и поиска по её документам и связям."
+policy:
+  allow_implicit_invocation: true
