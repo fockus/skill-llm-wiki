@@ -39,7 +39,9 @@ python3 scripts/install.py
 | pi | `~/.pi/agent/skills/llm-wiki` |
 | OpenCode | reads `~/.claude/skills`; `~/.config/opencode/skills/llm-wiki` only when Claude Code is not selected |
 
-Each path is a small folder of symlinks to `SKILL.md`, `scripts/`, `references/`, `agents/`, `LICENSE` — not a link to the whole repo, so agents that scan recursively (OpenCode) don't pick up `SKILL.md` files from `.venv` packages. The installer never overwrites foreign files and upgrades old whole-repo symlinks. It also adds the `~/.local/bin/llm-wiki` launcher.
+Each path is a small folder: a copy of `SKILL.md` plus symlinks to `scripts/`, `references/`, `agents/`, `LICENSE` — not a link to the whole repo, so agents that scan recursively (OpenCode) don't pick up `SKILL.md` files from `.venv` packages. `SKILL.md` is a real file because Codex skips a symlinked `SKILL.md`. The installer never overwrites foreign files and upgrades old whole-repo symlinks. It also adds the `~/.local/bin/llm-wiki` launcher.
+
+**After `git pull`, run `python3 scripts/install.py` again** to refresh the `SKILL.md` copies.
 
 ## Installing with a coding agent
 

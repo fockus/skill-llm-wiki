@@ -29,6 +29,20 @@ def test_install_all_agents_exposes_exactly_one_skill_each(tmp_path):
         assert not (target / ".venv").exists()
         assert not (target / "hermes").exists()
         assert (target / "scripts/run.py").resolve() == REPO / "scripts/run.py"
+        # Codex 0.170 молча пропускает SKILL.md, если это symlink на файл.
+        assert not (target / "SKILL.md").is_symlink()
+        assert (target / "SKILL.md").read_bytes() == (REPO / "SKILL.md").read_bytes()
+
+
+def test_reinstall_refreshes_stale_skill_md_copy(tmp_path):
+    result = install.install(REPO, home=tmp_path, agents=["codex"])
+    skill = Path(result["skills"]["codex"]) / "SKILL.md"
+    assert not skill.is_symlink()  # иначе запись ниже испортит SKILL.md репозитория
+    skill.write_text("устаревшая копия")
+
+    install.install(REPO, home=tmp_path, agents=["codex"])
+
+    assert skill.read_bytes() == (REPO / "SKILL.md").read_bytes()
 
 
 def test_install_opencode_alone_uses_its_own_skills_dir(tmp_path):

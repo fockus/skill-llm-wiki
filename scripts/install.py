@@ -3,12 +3,15 @@
 
 В каталог агента ставится не ссылка на весь репозиторий, а папка-витрина со ссылками
 только на файлы skill. Иначе OpenCode рекурсивно находит чужие SKILL.md внутри
-.venv (typer, docling) и в соседних плагинах репозитория.
+.venv (typer, docling) и в соседних плагинах репозитория. SKILL.md копируется:
+Codex 0.170 молча пропускает SKILL.md, если это symlink на файл. После обновления
+репозитория запусти install.py снова, чтобы освежить копию.
 """
 
 import argparse
 import json
 import os
+import shutil
 from pathlib import Path
 
 NAME = "llm-wiki"
@@ -31,9 +34,11 @@ def _ours(target, root):
         return target.resolve() == root
     if not target.is_dir():
         return False
-    return all(
-        entry.is_symlink() and entry.resolve() == root / entry.name
-        for entry in target.iterdir()
+    entries = list(target.iterdir())
+    links = [e for e in entries if e.name != "SKILL.md"]
+    # SKILL.md — копия любой версии; принадлежность определяют ссылки на репозиторий.
+    return bool(links) and all(
+        e.is_symlink() and e.resolve() == root / e.name for e in links
     )
 
 
@@ -44,6 +49,10 @@ def _place(target, root):
     for entry in target.iterdir():
         if entry.name not in PAYLOAD:
             entry.unlink()
+    skill = target / "SKILL.md"
+    if skill.is_symlink():
+        skill.unlink()
+    shutil.copyfile(root / "SKILL.md", skill)
     for name in PAYLOAD:
         link = target / name
         if not os.path.lexists(link):
