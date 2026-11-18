@@ -33,6 +33,50 @@ ln -s "$PWD" ~/.claude/skills/llm-wiki       # Claude Code
 python3 scripts/install.py                   # Codex: ~/.codex/skills/llm-wiki + ~/.local/bin/llm-wiki
 ```
 
+## Installing with a coding agent
+
+Paste this into Claude Code, Codex or another coding agent:
+
+> Install the llm-wiki skill from https://github.com/fockus/skill-llm-wiki following the "Steps for agents" section of its README.
+
+### Steps for agents
+
+1. **Prerequisites.** Check `git` and `uv --version`. If `uv` is missing, stop and ask the user to install it (https://docs.astral.sh/uv/). `uv` fetches Python 3.11 itself if needed.
+2. **Clone to a permanent location** — the skill is registered by symlink, so the clone must stay. Default: `~/.local/share/skill-llm-wiki`. If the directory exists, `git pull` instead of cloning.
+   ```bash
+   git clone https://github.com/fockus/skill-llm-wiki.git ~/.local/share/skill-llm-wiki
+   cd ~/.local/share/skill-llm-wiki
+   ```
+3. **Dependencies:** `python3 scripts/bootstrap.py` — creates `.venv` inside the clone from `requirements.lock`; never touches system Python.
+4. **Model** (network, ~240 MB): `.venv/bin/python scripts/prepare_model.py`. It must print `"dimension": 384`. Download the optional second model only if the user asks (see [Models](#models)).
+5. **Register** — never overwrite an existing path; if it exists and is not a symlink to this clone, stop and ask.
+   - Claude Code: `mkdir -p ~/.claude/skills && ln -s ~/.local/share/skill-llm-wiki ~/.claude/skills/llm-wiki`
+   - Codex: `python3 scripts/install.py` (creates `~/.codex/skills/llm-wiki` and the `~/.local/bin/llm-wiki` launcher)
+   - Other agents that load `SKILL.md` skills: symlink the clone into that agent's skills directory.
+6. **Smoke test:**
+   ```bash
+   T=$(mktemp -d)
+   python3 scripts/run.py init --root "$T" --title Smoke
+   printf '# Backups\nNightly snapshots restore data after a power failure.\n' > "$T/wiki/backups.md"
+   python3 scripts/run.py index --root "$T"
+   python3 scripts/run.py search "how to recover after outage" --root "$T" --mode semantic
+   ```
+   The search must return `wiki/backups.md`. Then delete `$T`.
+7. **Tell the user** to start a new agent session — skill lists are loaded at session start.
+
+Docling (`convert` for PDF → Markdown) adds ~1 GB (PyTorch); install it only on request: `uv pip install --python .venv/bin/python docling`.
+
+## Models
+
+Embeddings run locally on CPU via ONNX; document text never leaves the machine. Weights are **not** in this repo: `scripts/prepare_model.py` downloads them from Hugging Face at a revision pinned in [`embeddings.py`](scripts/llm_wiki/embeddings.py) into `~/.cache/fastembed/<model>/` (change with `cache_dir` in `.wiki.json`). Search and indexing never download anything: if the model is missing they fail with a hint instead of silently falling back to fulltext.
+
+| Model (`model` in `.wiki.json`) | Source repo | Dim | Size | License | Download |
+|---|---|---|---|---|---|
+| `sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2` (default) | [Qdrant/paraphrase-multilingual-MiniLM-L12-v2-onnx-Q](https://huggingface.co/Qdrant/paraphrase-multilingual-MiniLM-L12-v2-onnx-Q) | 384 | ~250 MB | Apache-2.0 | `prepare_model.py` |
+| `perplexity-ai/pplx-embed-v1-0.6b` (optional, ONNX q4) | [perplexity-ai/pplx-embed-v1-0.6b](https://huggingface.co/perplexity-ai/pplx-embed-v1-0.6b) | 1024 | ~390 MB | MIT | `prepare_model.py --model perplexity-ai/pplx-embed-v1-0.6b` |
+
+`prepare_model.py --offline` only checks the local copy. For an air-gapped machine, copy the model folder from `cache_dir` along with the clone. Switching models marks the index stale; run `index` to re-embed.
+
 ## Usage
 
 ```bash

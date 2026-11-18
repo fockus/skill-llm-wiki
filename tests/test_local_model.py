@@ -71,3 +71,19 @@ def test_pplx_embedder_russian_question_closer_to_matching_english_text():
         ]
     )
     assert len(q) == 1024 and q @ np.array(good) > q @ np.array(bad) + 0.2
+
+
+def test_minilm_loads_from_pinned_revision_dir():
+    from llm_wiki import embeddings
+
+    model = embeddings.make_embedder(DEFAULTS)
+    assert Path(model.engine.model._model_dir) == embeddings.minilm_dir(DEFAULTS)
+    assert len(embeddings.MINILM_REVISION) == 40
+
+
+def test_minilm_missing_pinned_dir_fails_with_prepare_hint(tmp_path):
+    import pytest
+    from llm_wiki import embeddings
+
+    with pytest.raises(ValueError, match="prepare_model.py"):
+        embeddings.make_embedder({**DEFAULTS, "cache_dir": str(tmp_path)})

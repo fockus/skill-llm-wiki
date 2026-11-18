@@ -7,36 +7,54 @@ from pathlib import Path
 
 import numpy as np
 
+MINILM = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+MINILM_REPO = "Qdrant/paraphrase-multilingual-MiniLM-L12-v2-onnx-Q"
+MINILM_REVISION = "faf4aa4225822f3bc6376869cb1164e8e3feedd0"
+MINILM_FILES = [
+    "model_optimized.onnx",
+    "tokenizer.json",
+    "config.json",
+    "special_tokens_map.json",
+    "tokenizer_config.json",
+]
+
+
+def minilm_dir(cfg):
+    return (
+        Path(cfg["cache_dir"]).expanduser()
+        / "paraphrase-multilingual-MiniLM-L12-v2-onnx-Q"
+    )
+
 
 class LocalEmbedder:
     def __init__(self, cfg):
         from fastembed import TextEmbedding
 
-        if (
-            cfg["model"]
-            != "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-        ):
+        if cfg["model"] != MINILM:
             raise ValueError(
                 "Эта модель требует отдельного проверенного embedding adapter"
             )
-        try:
-            self.engine = TextEmbedding(
-                model_name=cfg["model"],
-                cache_dir=str(Path(cfg["cache_dir"]).expanduser()),
-                local_files_only=cfg.get("offline", True),
-                threads=cfg.get("threads", 2),
-            )
-        except Exception as exc:
+        folder = minilm_dir(cfg)
+        missing = [f for f in MINILM_FILES if not (folder / f).is_file()]
+        if missing:
             raise ValueError(
                 "Локальная embedding model недоступна; выполните scripts/prepare_model.py: "
-                + str(exc)
-            ) from exc
-        # FastEmbed 0.9.1 хранит snapshot в _model_dir; версия закреплена в lock.
-        folder = Path(self.engine.model._model_dir)
+                f"нет {missing} в {folder}"
+            )
+        # specific_model_path отключает собственную загрузку fastembed (всегда последняя
+        # ревизия); файлы скачивает prepare_model.py по MINILM_REVISION.
+        self.engine = TextEmbedding(
+            model_name=cfg["model"],
+            specific_model_path=str(folder),
+            local_files_only=True,
+            threads=cfg.get("threads", 2),
+        )
         hasher = hashlib.sha256()
         for path in sorted(folder.rglob("*")):
-            if path.is_file():
-                hasher.update(str(path.relative_to(folder)).encode())
+            rel = path.relative_to(folder)
+            # .cache/ — служебные метаданные huggingface_hub, не часть модели.
+            if path.is_file() and rel.parts[0] != ".cache":
+                hasher.update(str(rel).encode())
                 with path.open("rb") as stream:
                     for block in iter(lambda: stream.read(1_048_576), b""):
                         hasher.update(block)
