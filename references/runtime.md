@@ -31,7 +31,7 @@ Bootstrap использует `requirements.lock` и ставит runtime в `.
 
 `include` — относительные каталоги или файлы; `exclude` — префиксы или glob. Нельзя использовать `..` для чтения соседнего code: при необходимости выбери общий root проекта и явно включи его wiki/raw/code подпути. Отсутствующий root не создаётся командами поиска. Смена config вызывает stale, затем нужен index.
 
-Для глобального подключения используй `python3 scripts/install.py`. Скрипт создаёт `~/.codex/skills/llm-wiki` и `~/.local/bin/llm-wiki` symlinks без перезаписи других установок. Если `.local/bin` отсутствует в PATH, работает абсолютный launcher из skill. Список skills текущего чата может быть снимком: для обнаружения новой установки открой новый чат или явно укажи путь SKILL.md.
+Для глобального подключения используй `python3 scripts/install.py [--agents claude,codex,pi,opencode]` (по умолчанию — агенты, чьи каталоги найдены). В `~/.claude/skills`, `$CODEX_HOME/skills`, `~/.pi/agent/skills` или `~/.config/opencode/skills` создаётся папка `llm-wiki/` со ссылками только на `SKILL.md`, `LICENSE`, `agents/`, `references/`, `scripts/`: ссылка на весь репозиторий отдала бы OpenCode чужие `SKILL.md` из `.venv` и соседних плагинов. OpenCode читает и `~/.claude/skills`, поэтому при выбранном Claude Code отдельная копия для него не ставится. Также создаётся launcher `~/.local/bin/llm-wiki`. Чужие файлы не перезаписываются; прежняя ссылка на весь репозиторий заменяется витриной. Если `.local/bin` отсутствует в PATH, работает абсолютный launcher из skill. Список skills текущего чата может быть снимком: для обнаружения новой установки открой новый чат или явно укажи путь SKILL.md.
 
 ## Вторая модель и Docling (2026-11-13)
 

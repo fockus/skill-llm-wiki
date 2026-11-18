@@ -1,11 +1,12 @@
 ---
 name: llm-wiki
+license: MIT
 description: Create and maintain source-grounded LLM wikis using Karpathy's persistent-wiki pattern. Use for project knowledge bases, ingesting documents, reconciling decisions, and fulltext, local semantic or graph-assisted search across linked files and nested sections.
 ---
 
 # LLM Wiki
 
-Build a maintained knowledge base, not merely a document index. Raw sources remain immutable; Codex reads them and updates linked, source-grounded Markdown pages. A local retrieval runtime helps find evidence and dependencies across projects.
+Build a maintained knowledge base, not merely a document index. Raw sources remain immutable; the agent reads them and updates linked, source-grounded Markdown pages. A local retrieval runtime helps find evidence and dependencies across projects.
 
 ## Entry point
 

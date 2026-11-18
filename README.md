@@ -4,7 +4,7 @@
 
 Raw sources stay immutable; the agent reads them and maintains linked Markdown pages with provenance. A local runtime indexes the wiki (SQLite FTS5 + local embeddings + a link/containment graph) so the agent can find evidence across documents and nested sections — no server, no cloud API.
 
-Works with Claude Code and Codex (any agent that loads `SKILL.md` skills).
+Works with **Claude Code, Codex, pi and OpenCode** — any agent that loads [Agent Skills](https://agentskills.io) (`SKILL.md`).
 
 ## Features
 
@@ -26,16 +26,24 @@ python3 scripts/bootstrap.py                 # venv from requirements.lock
 .venv/bin/python scripts/prepare_model.py    # downloads the embedding model once
 ```
 
-Register the skill:
+Register the skill in every agent found on the machine (or pick: `--agents claude,codex,pi,opencode`):
 
 ```bash
-ln -s "$PWD" ~/.claude/skills/llm-wiki       # Claude Code
-python3 scripts/install.py                   # Codex: ~/.codex/skills/llm-wiki + ~/.local/bin/llm-wiki
+python3 scripts/install.py
 ```
+
+| Agent | Skill path |
+|---|---|
+| Claude Code | `~/.claude/skills/llm-wiki` |
+| Codex | `$CODEX_HOME/skills/llm-wiki` (default `~/.codex`) |
+| pi | `~/.pi/agent/skills/llm-wiki` |
+| OpenCode | reads `~/.claude/skills`; `~/.config/opencode/skills/llm-wiki` only when Claude Code is not selected |
+
+Each path is a small folder of symlinks to `SKILL.md`, `scripts/`, `references/`, `agents/`, `LICENSE` — not a link to the whole repo, so agents that scan recursively (OpenCode) don't pick up `SKILL.md` files from `.venv` packages. The installer never overwrites foreign files and upgrades old whole-repo symlinks. It also adds the `~/.local/bin/llm-wiki` launcher.
 
 ## Installing with a coding agent
 
-Paste this into Claude Code, Codex or another coding agent:
+Paste this into Claude Code, Codex, pi, OpenCode or another coding agent:
 
 > Install the llm-wiki skill from https://github.com/fockus/skill-llm-wiki following the "Steps for agents" section of its README.
 
@@ -49,10 +57,7 @@ Paste this into Claude Code, Codex or another coding agent:
    ```
 3. **Dependencies:** `python3 scripts/bootstrap.py` — creates `.venv` inside the clone from `requirements.lock`; never touches system Python.
 4. **Model** (network, ~240 MB): `.venv/bin/python scripts/prepare_model.py`. It must print `"dimension": 384`. Download the optional second model only if the user asks (see [Models](#models)).
-5. **Register** — never overwrite an existing path; if it exists and is not a symlink to this clone, stop and ask.
-   - Claude Code: `mkdir -p ~/.claude/skills && ln -s ~/.local/share/skill-llm-wiki ~/.claude/skills/llm-wiki`
-   - Codex: `python3 scripts/install.py` (creates `~/.codex/skills/llm-wiki` and the `~/.local/bin/llm-wiki` launcher)
-   - Other agents that load `SKILL.md` skills: symlink the clone into that agent's skills directory.
+5. **Register:** `python3 scripts/install.py` — installs into every agent whose config dir exists (Claude Code, Codex, pi, OpenCode); limit with `--agents`. If it reports `Конфликт установки` (a foreign file at the target), stop and ask the user — do not delete anything. Do not hand-symlink the whole clone into a skills dir: OpenCode would then also load the `SKILL.md` files of packages inside `.venv`.
 6. **Smoke test:**
    ```bash
    T=$(mktemp -d)
